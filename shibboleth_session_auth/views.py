@@ -67,6 +67,16 @@ def shibboleth_session_auth(request):
                 group.user_set.add(user)
                 logger.info("adding user %s to group %s", user.username, group.name)
 
+    staff_group_name = settings.SHIBBOLETH_SESSION_AUTH['DJANGO_STAFF_GROUP']
+    if staff_group_name:
+        staff_group_member = user.groups.filter(name=staff_group_name).count() > 0
+        if not user.is_staff and staff_group_member:
+            user.is_staff = True
+            user.save()
+        elif user.is_staff and staff_group_member:
+            user.is_staff = False
+            user.save()
+
     user = authenticate(remote_user=user.username)
     login(request, user)
 
