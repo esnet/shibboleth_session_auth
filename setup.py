@@ -18,7 +18,7 @@ if sys.version_info[0] == 3 and sys.version_info[1] < 3:
 setup(
     name="shibboleth_session_auth",
 
-    version="0.5",
+    version="0.6",
 
     description="Simplistic Shibboleth integration for Django sessions",
     long_description=long_description,
