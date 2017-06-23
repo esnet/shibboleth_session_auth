@@ -44,8 +44,10 @@ def shibboleth_session_auth(request):
         user.set_unusable_password()
         user.save()
 
+    idp_provided_group_names = []
     if idp in settings.SHIBBOLETH_SESSION_AUTH['GROUPS_BY_IDP']:
         for group_name in settings.SHIBBOLETH_SESSION_AUTH['GROUPS_BY_IDP'][idp]:
+            idp_provided_group_names.append(group_name)
             try:
                 group = Group.objects.get(name=group_name)
             except Group.DoesNotExist:
@@ -58,7 +60,9 @@ def shibboleth_session_auth(request):
 
     group_attr = settings.SHIBBOLETH_SESSION_AUTH['GROUP_ATTRIBUTE']
     if group_attr in request.META:
-        for group_name in request.META[group_attr].split(";"):
+        idp_group_names = request.META[group_attr].split(";")
+        idp_provided_group_names.extend(idp_group_names)
+        for group_name in idp_group_names:
             group, created = Group.objects.get_or_create(name=group_name)
             if created:
                 logging.info("creating group %s (remotely provided by IdP %s)", group_name, idp)
@@ -67,14 +71,16 @@ def shibboleth_session_auth(request):
                 group.user_set.add(user)
                 logger.info("adding user %s to group %s", user.username, group.name)
 
+    user_groups = user.groups.all()
+    for group in user_groups:
+        if group.name not in idp_provided_group_names:
+            group.user_set.remove(user)
+
     staff_group_name = settings.SHIBBOLETH_SESSION_AUTH['DJANGO_STAFF_GROUP']
     if staff_group_name:
-        staff_group_member = user.groups.filter(name=staff_group_name).count() > 0
-        if not user.is_staff and staff_group_member:
-            user.is_staff = True
-            user.save()
-        elif user.is_staff and staff_group_member:
-            user.is_staff = False
+        is_staff_group_member = user.groups.filter(name=staff_group_name).count() > 0
+        if user.is_staff != is_staff_group_member:
+            user.is_staff = is_staff_group_member
             user.save()
 
     user = authenticate(remote_user=user.username)

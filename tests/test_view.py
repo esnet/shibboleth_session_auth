@@ -10,7 +10,7 @@ from django.test import TestCase, Client
 from django.conf import settings
 from django.contrib.auth.models import User, Group
 
-TEST_GROUP = "Example Staff"
+TEST_GROUP = "example_staff"
 TEST_SHIBBOLETH_SESSION_AUTH = {
     'IDP_ATTRIBUTE': 'HTTP_SHIB_IDENTITY_PROVIDER',
     'AUTHORIZED_IDPS': [
@@ -68,7 +68,6 @@ class TestShibInteractions(TestCase):
         self.staff_group = settings.SHIBBOLETH_SESSION_AUTH["DJANGO_STAFF_GROUP"]
 
 
-
     def test_invalid_idp_response(self):
         """Test for invalid IdP context"""
         c = Client()
@@ -104,6 +103,34 @@ class TestShibInteractions(TestCase):
         r = c.get("/")
         self.assertEqual(r.status_code, 302)
         self.assertTrue(self.common_group in self.alice.groups.all())
+
+    def test_existing_user_remove_group(self):
+        # remove a group that is granted due to IdP
+        self.assertTrue(self.common_group in self.alice.groups.all())
+        groups_by_idp = copy.deepcopy(settings.SHIBBOLETH_SESSION_AUTH["GROUPS_BY_IDP"])
+        settings.SHIBBOLETH_SESSION_AUTH["GROUPS_BY_IDP"] = {}
+        c = Client(**self.shib_user_attr)
+        r = c.get("/")
+        settings.SHIBBOLETH_SESSION_AUTH["GROUPS_BY_IDP"] = groups_by_idp
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(self.common_group not in self.alice.groups.all())
+
+        # add a IdP provided group
+        attr = copy.deepcopy(self.shib_user_attr)
+        attr['HTTP_OU'] = 'foo'
+        c = Client(**attr)
+        r = c.get("/")
+        self.assertEqual(r.status_code, 302)
+        alice_group_names = self.alice.groups.all().values_list('name', flat=True)
+        self.assertTrue('foo' in alice_group_names)
+
+        # remove IdP provided group
+        attr['HTTP_OU'] = ''
+        c = Client(**attr)
+        r = c.get("/")
+        self.assertEqual(r.status_code, 302)
+        alice_group_names = self.alice.groups.all().values_list('name', flat=True)
+        self.assertTrue('foo' not in alice_group_names)
 
     def test_staff_user(self):
         """Ensure user gets/loses is_staff based on group."""
