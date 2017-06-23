@@ -12,8 +12,8 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
     sys.exit('Sorry, Python 2 < 2.7 is not supported')
 
-if sys.version_info[0] == 3 and sys.version_info[1] < 3:
-    sys.exit('Sorry, Python 3 < 3.3 is not supported')
+if sys.version_info[0] == 3:
+    sys.exit('Sorry, Python 3 is not supported')
 
 setup(
     name="shibboleth_session_auth",
@@ -30,7 +30,7 @@ setup(
     license="BSD",
 
     classifiers=[
-        "Development Status :: 5 - Production / Stable",
+        "Development Status :: 4 - Beta",
 
         "Intended Audience :: Developers",
 
