@@ -62,7 +62,8 @@ SHIBBOLETH_SESSION_AUTH = {
         ('sn', 'last_name', False),
     ],
     'GROUP_ATTRIBUTE': 'member',
-    'GROUPS_BY_IDP': {}
+    'GROUPS_BY_IDP': {},
+    'DJANGO_STAFF_GROUP': 'webadmin',
 }
 ```
 
@@ -84,4 +85,13 @@ separated by a semicolon (`;`) in the data provided by the IdP.
 `GROUPS_BY_IDP` this is a dictionary mapping an IdP (from `AUTHORIZED_IDPS`)
 to a list of groups. If the user is authenticated to the named IdP then
 the user will be added to each of the groups, creating the groups as necessary.
+
+`DJANGO_STAFF_GROUP` is the name of the group presented by the IdP that will
+be used to determine if the user has the `is_staff` bit set or not.
+
+We assume the the IdP is the source of truth for groups and for whether or not
+a user should have Django staff privileges. This means that the set of groups
+the user will be a member of will be exactly the set of groups that the IdP
+sends. This also means that if the user is no longer a member of
+`DJANGO_STAFF_GROUP` that they will lose their staff privileges.
 
