@@ -71,17 +71,18 @@ def shibboleth_session_auth(request):
                 group.user_set.add(user)
                 logger.info("adding user %s to group %s", user.username, group.name)
 
-    user_groups = user.groups.all()
-    for group in user_groups:
-        if group.name not in idp_provided_group_names:
-            group.user_set.remove(user)
+    if settings.SHIBBOLETH_SESSION_AUTH.get('GROUPS_ARE_AUTHORITATIVE', True):
+        user_groups = user.groups.all()
+        for group in user_groups:
+            if group.name not in idp_provided_group_names:
+                group.user_set.remove(user)
 
-    staff_group_name = settings.SHIBBOLETH_SESSION_AUTH['DJANGO_STAFF_GROUP']
-    if staff_group_name:
-        is_staff_group_member = user.groups.filter(name=staff_group_name).count() > 0
-        if user.is_staff != is_staff_group_member:
-            user.is_staff = is_staff_group_member
-            user.save()
+        staff_group_name = settings.SHIBBOLETH_SESSION_AUTH['DJANGO_STAFF_GROUP']
+        if staff_group_name:
+            is_staff_group_member = user.groups.filter(name=staff_group_name).count() > 0
+            if user.is_staff != is_staff_group_member:
+                user.is_staff = is_staff_group_member
+                user.save()
 
     user = authenticate(remote_user=user.username)
     login(request, user)

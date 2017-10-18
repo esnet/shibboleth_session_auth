@@ -64,6 +64,7 @@ SHIBBOLETH_SESSION_AUTH = {
     'GROUP_ATTRIBUTE': 'member',
     'GROUPS_BY_IDP': {},
     'DJANGO_STAFF_GROUP': 'webadmin',
+    ‘GROUPS_ARE_AUTHORITATIVE’: True,
 }
 ```
 
@@ -89,9 +90,13 @@ the user will be added to each of the groups, creating the groups as necessary.
 `DJANGO_STAFF_GROUP` is the name of the group presented by the IdP that will
 be used to determine if the user has the `is_staff` bit set or not.
 
-We assume the the IdP is the source of truth for groups and for whether or not
-a user should have Django staff privileges. This means that the set of groups
-the user will be a member of will be exactly the set of groups that the IdP
-sends. This also means that if the user is no longer a member of
-`DJANGO_STAFF_GROUP` that they will lose their staff privileges.
+If `GROUPS_ARE_AUTHORITATIVE` is true (or not set), we assume the the
+IdP is the source of truth for groups and for whether or not a user
+should have Django staff privileges. This means that the set of groups
+the user will be a member of will be exactly the set of groups that
+the IdP sends. This also means that if the user is no longer a member
+of `DJANGO_STAFF_GROUP` that they will lose their staff privileges.
 
+If `GROUPS_ARE_AUTHORITATIVE` is false, we add groups as specified by
+`GROUP_ATTRIBUTE` and `GROUPS_BY_IDP`, but never remove groups or
+alter the is_staff attribute of a user.
